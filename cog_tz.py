@@ -29,7 +29,7 @@ class TimeEmbedFactory:
         e.set_thumbnail(url=user.display_avatar.url)
         e.add_field(name="Current time", value=time.strftime("**%H:%M:%S**"), inline=False)
         e.add_field(name="Current date", value=time.strftime("%d/%m/%Y"), inline=False)
-        e.add_field(name="Timezone", value=time.strftime(f"%Z ({timezone}), UTC%z"))
+        e.add_field(name="Timezone", value=time.strftime(f"{timezone}, UTC%z"))
         return e
 
 
@@ -50,7 +50,7 @@ class Time(commands.GroupCog):
     @app_commands.command(name='set', description='Set your timezone')
     async def set_time(self, intr: discord.Interaction, timezone: str, user: discord.User = None):
         if user is not None:
-            if not Time.has_permission(user):
+            if not Time.has_permission(intr.user):
                 await intr.response.send_message('No permission')
                 return
 
@@ -79,8 +79,6 @@ class Time(commands.GroupCog):
             return
 
         await intr.response.send_message(embed=TimeEmbedFactory.simple_embed(user, tz_str))
-
-
 
     @classmethod
     def setup(cls, bot: commands.Bot, handler: logging.Handler):
