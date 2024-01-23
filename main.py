@@ -37,7 +37,7 @@ async def on_message(msg: discord.Message):
 
 
 async def reload_cogs():
-    if bot.get_cog('TimezoneConvert') is None:
+    if bot.get_cog('Time') is None:
         cog = cog_tz.Time.setup(bot, handler)
         print(f'adding {cog.__cog_name__}')
         await bot.add_cog(cog)
