@@ -45,17 +45,17 @@ class TimeEmbedFactory:
         e.colour = discord.Colour.fuchsia()
         e.title = f"Time conversion"
 
-        e.add_field(name="Converted Time", value=datetime2.strftime("**%H:%M:%S %d/%m/%Y**"), inline=True)
+        e.add_field(name="Converted Time", value=datetime2.strftime("**%H:%M:%S**\n**%d/%m/%Y**"), inline=True)
         e.add_field(name="Converted Timezone", value=str(datetime2.tzinfo) + ', ' + datetime2.strftime("UTC%z"), inline=True)
 
         e.add_field(name="", value="", inline=False)
 
-        e.add_field(name="Original Time", value=datetime1.strftime("%H:%M:%S %d/%m/%Y"), inline=True)
+        e.add_field(name="Original Time", value=datetime1.strftime("%H:%M:%S**\n**%d/%m/%Y"), inline=True)
         e.add_field(name="Original Timezone", value=str(datetime1.tzinfo) + ', ' + datetime1.strftime("UTC%z"), inline=True)
 
         e.add_field(name="", value="", inline=False)
 
-        e.add_field(name="Time difference", value=str(diff_h), inline=True)
+        e.add_field(name="Time difference", value=f'{diff_h} hours', inline=True)
         e.add_field(name="Unix timestamp", value=datetime1.timestamp())
 
         return e
