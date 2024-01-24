@@ -8,6 +8,8 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 import cog_tz
+import db
+from db import create_db
 import errlogging
 
 logger = logging.Logger('General Log')
@@ -64,4 +66,13 @@ async def on_error(event, *args, **kwargs):
     logger.error('An error has occurred! Check the latest ERRLOG for more info')
     errlogging.new_errlog(sys.exc_info()[1])
 
-bot.run(token=TOKEN, log_handler=handler)
+if __name__ == '__main__':
+    if not os.path.exists(db.__filename__):
+        print(db.__filename__)
+        res = input('Failed to find database. Would you like to create it? [Y/N]: ')
+        if res not in ["yes", "y"]:
+            quit()
+
+        create_db.create_db()
+
+    bot.run(token=TOKEN, log_handler=handler)
