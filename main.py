@@ -39,17 +39,24 @@ async def on_message(msg: discord.Message):
 async def reload_cogs():
     if bot.get_cog('Time') is None:
         cog = cog_tz.Time.setup(bot, handler)
-        print(f'adding {cog.__cog_name__}')
+        print(f'adding cog {cog.__cog_name__}')
         await bot.add_cog(cog)
 
 
 @bot.event
+async def on_resume():
+    await reload_cogs()
+
+
+@bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Activity(name='time go by.', type=discord.ActivityType.watching))
+    await bot.change_presence(activity=discord.Activity(name='startup...', type=discord.ActivityType.playing),
+                              status=discord.Status.dnd)
 
     errlogging.generate_errlog_folder()
-
     await reload_cogs()
+
+    await bot.change_presence(activity=discord.Activity(name='time go by.', type=discord.ActivityType.watching))
 
 
 @bot.event
