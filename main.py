@@ -70,7 +70,7 @@ if __name__ == '__main__':
     if not os.path.exists(db.__filename__):
         print(db.__filename__)
         res = input('Failed to find database. Would you like to create it? [Y/N]: ')
-        if res not in ["yes", "y"]:
+        if res.lower() not in ["yes", "y"]:
             quit()
 
         create_db.create_db()
