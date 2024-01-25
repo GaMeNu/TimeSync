@@ -110,6 +110,8 @@ class Time(commands.GroupCog):
         return res - 1
 
     @app_commands.command(name='list', description='List all valid timezones')
+    @app_commands.describe(search='Search the timezone list',
+                           page='Get a specific page')
     async def time_list(self, intr: discord.Interaction, search: str = None, page: int = None):
         await intr.response.defer()
 
@@ -122,6 +124,7 @@ class Time(commands.GroupCog):
             ls = [item for item in pytz.all_timezones]
 
         items_in_page = 25
+
         try:
             sliced = self.get_list_page(ls, page - 1, items_in_page)
         except IndexError as e:
@@ -137,10 +140,19 @@ class Time(commands.GroupCog):
 
 {formatted}\
 """
-        await intr.followup.send(ret)
+        if search is None:
+            ret += """
 
+> ### TIP:
+> Use `/time list search:[search term]` to narrow down search results!
+."""
+        v = discord.ui.View()
+        v.add_item(discord.ui.Button(label='Read externally', style=discord.ButtonStyle.url, url='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List'))
+        await intr.followup.send(ret, view=v)
 
     @app_commands.command(name='set', description='Set your timezone')
+    @app_commands.describe(timezone='Timezone\'s name',
+                           user='Set others\' timezone. Author only')
     async def set_time(self, intr: discord.Interaction, timezone: str, user: discord.User = None):
         if user is not None:
             if not Time.has_permission(intr.user):
@@ -152,7 +164,7 @@ class Time(commands.GroupCog):
 
         if timezone not in pytz.all_timezones:
             await intr.response.send_message(
-                'Error: invalid timezone!\nList of all valid timezones: https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568')
+                'Error: invalid timezone!\nPlease use `/time list` to look up valid timezones')
             return
 
         if self.db.add_user(user.id, timezone):
@@ -161,6 +173,7 @@ class Time(commands.GroupCog):
             await intr.response.send_message(f'Failed to set `@{user.name}`\'s timezone')
 
     @app_commands.command(name='get', description='Get a user\'s time')
+    @app_commands.describe(user='User to get timezone of. Leave empty to get yours.')
     async def get_time(self, intr: discord.Interaction, user: discord.User = None):
         if user is None:
             user = intr.user
@@ -174,19 +187,21 @@ class Time(commands.GroupCog):
         await intr.response.send_message(embed=TimeEmbedFactory.simple_embed(user, tz_str))
 
     @app_commands.command(name='convert', description='Convert a time from one timezone to another')
-    @app_commands.describe(time='Format: HH:MM:SS',
+    @app_commands.describe(timezone1='Timezone 1\'s name (Use /time list for a list)',
+                           timezone2='Timezone 2\'s name (Use /time list for a list)',
+                           time='Format: HH:MM:SS',
                            date='Format: YYYY-MM-DD')
     async def time_convert(self, intr: discord.Interaction, timezone1: str, timezone2: str, time: str = None,
                            date: str = None):
 
         if timezone1 not in pytz.all_timezones:
             await intr.response.send_message(
-                f'Invalid timezone: "{timezone1}"\nFor a list of all valid timezones use /time list')
+                f'Invalid timezone: "{timezone1}"\nFor a list of all valid timezones use `/time list`')
             return
 
         if timezone2 not in pytz.all_timezones:
             await intr.response.send_message(
-                f'Invalid timezone: "{timezone2}"\nFor a list of all valid timezones use /time list')
+                f'Invalid timezone: "{timezone2}"\nFor a list of all valid timezones use `/time list`')
             return
 
         await intr.response.defer()
