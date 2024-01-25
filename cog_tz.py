@@ -38,7 +38,6 @@ class TimeEmbedFactory:
 
     @staticmethod
     def convert_embed(datetime1: datetime, datetime2: datetime):
-
         diff_h = int((datetime2.utcoffset() - datetime1.utcoffset()).total_seconds() // 3600)
 
         e = discord.Embed()
@@ -46,12 +45,14 @@ class TimeEmbedFactory:
         e.title = f"Time conversion"
 
         e.add_field(name="Converted Time", value=datetime2.strftime("**%H:%M:%S**\n**%d/%m/%Y**"), inline=True)
-        e.add_field(name="Converted Timezone", value=str(datetime2.tzinfo) + ', ' + datetime2.strftime("UTC%z"), inline=True)
+        e.add_field(name="Converted Timezone", value=str(datetime2.tzinfo) + ', ' + datetime2.strftime("UTC%z"),
+                    inline=True)
 
         e.add_field(name="", value="", inline=False)
 
         e.add_field(name="Original Time", value=datetime1.strftime("%H:%M:%S**\n**%d/%m/%Y"), inline=True)
-        e.add_field(name="Original Timezone", value=str(datetime1.tzinfo) + ', ' + datetime1.strftime("UTC%z"), inline=True)
+        e.add_field(name="Original Timezone", value=str(datetime1.tzinfo) + ', ' + datetime1.strftime("UTC%z"),
+                    inline=True)
 
         e.add_field(name="", value="", inline=False)
 
@@ -75,9 +76,69 @@ class Time(commands.GroupCog):
     def has_permission(user: discord.User):
         return user.id == AUTHOR_ID
 
+    @staticmethod
+    def get_list_page(ls: list, page: int, items_in_page: int):
+        """
+        :param ls:
+        :param page: starting at 0
+        :param items_in_page: starting at 1
+        :return:
+        """
+
+        if page > Time.get_max_page(ls, items_in_page):
+            raise IndexError('Page number is too high')
+        if page < 0:
+            raise IndexError('Page number is too low')
+        start_index = page * items_in_page
+        end_index = start_index + items_in_page
+        ret = ls[start_index:end_index]
+        return ret
+
+    @staticmethod
+    def get_max_page(ls: list, items_in_page: int):
+        """
+        Max page index (number - 1)
+        :param ls:
+        :param items_in_page:
+        :return:
+        """
+        len_ls = len(ls)
+        res = len_ls // items_in_page
+        if len_ls % items_in_page != 0:
+            res += 1
+
+        return res - 1
+
     @app_commands.command(name='list', description='List all valid timezones')
-    async def time_list(self, intr: discord.Interaction):
-        intr.response.send_message('List of all valid timezones: https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568')
+    async def time_list(self, intr: discord.Interaction, search: str = None, page: int = None):
+        await intr.response.defer()
+
+        if page is None:
+            page = 1
+        if search is not None:
+            ls = [item for item in pytz.all_timezones
+                  if search.lower().replace(' ', '_') in item.lower()]
+        else:
+            ls = [item for item in pytz.all_timezones]
+
+        items_in_page = 25
+        try:
+            sliced = self.get_list_page(ls, page - 1, items_in_page)
+        except IndexError as e:
+            await intr.followup.send(e.args[0])
+            return
+
+        formatted = '\n'.join(
+            [f'{i+1}. `{sliced[i]}`' for i in range(0, len(sliced))]
+        )
+
+        ret = f"""\
+==== PAGE {page}/{self.get_max_page(ls, items_in_page) + 1} ({len(sliced)} items) ====
+
+{formatted}\
+"""
+        await intr.followup.send(ret)
+
 
     @app_commands.command(name='set', description='Set your timezone')
     async def set_time(self, intr: discord.Interaction, timezone: str, user: discord.User = None):
@@ -115,14 +176,17 @@ class Time(commands.GroupCog):
     @app_commands.command(name='convert', description='Convert a time from one timezone to another')
     @app_commands.describe(time='Format: HH:MM:SS',
                            date='Format: YYYY-MM-DD')
-    async def time_convert(self, intr: discord.Interaction, timezone1: str, timezone2: str, time: str = None, date: str = None):
+    async def time_convert(self, intr: discord.Interaction, timezone1: str, timezone2: str, time: str = None,
+                           date: str = None):
 
         if timezone1 not in pytz.all_timezones:
-            await intr.response.send_message(f'Invalid timezone: "{timezone1}"\nFor a list of all valid timezones use /time list')
+            await intr.response.send_message(
+                f'Invalid timezone: "{timezone1}"\nFor a list of all valid timezones use /time list')
             return
 
         if timezone2 not in pytz.all_timezones:
-            await intr.response.send_message(f'Invalid timezone: "{timezone2}"\nFor a list of all valid timezones use /time list')
+            await intr.response.send_message(
+                f'Invalid timezone: "{timezone2}"\nFor a list of all valid timezones use /time list')
             return
 
         await intr.response.defer()
@@ -164,7 +228,6 @@ class Time(commands.GroupCog):
             return
 
         await intr.followup.send(embed=TimeEmbedFactory.convert_embed(datetime1, datetime2))
-
 
     @classmethod
     def setup(cls, bot: commands.Bot, handler: logging.Handler):
