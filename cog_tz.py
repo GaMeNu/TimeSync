@@ -132,7 +132,7 @@ class Time(commands.GroupCog):
             return
 
         formatted = '\n'.join(
-            [f'{i+1}. `{sliced[i]}`' for i in range(0, len(sliced))]
+            [f'{i + 1}. `{sliced[i]}`' for i in range(0, len(sliced))]
         )
 
         ret = f"""\
@@ -147,7 +147,8 @@ class Time(commands.GroupCog):
 > Use `/time list search:[search term]` to narrow down search results!
 ."""
         v = discord.ui.View()
-        v.add_item(discord.ui.Button(label='Read externally', style=discord.ButtonStyle.url, url='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List'))
+        v.add_item(discord.ui.Button(label='Read externally', style=discord.ButtonStyle.url,
+                                     url='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List'))
         await intr.followup.send(ret, view=v)
 
     @app_commands.command(name='set', description='Set your timezone')
@@ -185,6 +186,22 @@ class Time(commands.GroupCog):
             return
 
         await intr.response.send_message(embed=TimeEmbedFactory.simple_embed(user, tz_str))
+
+    @app_commands.command(name='clear', description='Remove your assigned data')
+    async def time_clear(self, intr: discord.Interaction, confirmation: str = None):
+        if confirmation is None:
+            await intr.response.send_message("Are you sure you would like to clear your data?\n"
+                                             "This action is irreversible!\n"
+                                             f"Please run `/time clear {intr.user.name}` to confirm.")
+            return
+
+        if confirmation != intr.user.name:
+            await intr.response.send_message('Invalid confirmation string.')
+            return
+
+        await intr.response.defer()
+        self.db.remove_user(intr.user.id)
+        await intr.followup.send(f"Successfully removed user `@{intr.user.name}` from TimeSync")
 
     @app_commands.command(name='convert', description='Convert a time from one timezone to another')
     @app_commands.describe(timezone1='Timezone 1\'s name (Use /time list for a list)',
