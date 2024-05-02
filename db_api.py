@@ -1,5 +1,8 @@
-import sqlite3
+import os
 
+from dotenv import load_dotenv
+from mysql import connector as database
+'''
 class ContextCursorFactory:
     def __init__(self, connection: sqlite3.Connection):
         self.connection = connection
@@ -10,21 +13,33 @@ class ContextCursorFactory:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.active_cursor.close()
+'''
 
+load_dotenv()
+DATABASE = os.getenv("DATABASE")
+DB_USERNAME = os.getenv("DB_USERNAME")
+DB_PASSWORD = os.getenv("PASSWORD")
 
 class DB_API:
     def __init__(self):
-        self.connection = sqlite3.connect('global_clock_db.sqlite3')
+        self.connection = database.connect(
+            host="localhost",
+            port=8080,
+            user=DB_USERNAME,
+            password=DB_PASSWORD,
+            database=DATABASE
+        )
+        print(self.connection.is_connected())
 
     def cursor(self):
-        return ContextCursorFactory(self.connection)
+        return self.connection.cursor()
 
     def add_user(self, discord_id: int, timezone: str) -> bool:
         success = True
         with self.cursor() as crsr:
             try:
                 crsr.execute("REPLACE INTO user_data VALUES (?, ?)", (discord_id, timezone))
-            except sqlite3.Error:
+            except db.Error:
                 success = False
         self.connection.commit()
         return success
@@ -34,7 +49,7 @@ class DB_API:
         with self.cursor() as crsr:
             try:
                 crsr.execute("DELETE FROM user_data WHERE discord_id = ?", (discord_id,))
-            except sqlite3.Error:
+            except db.Error:
                 success = False
         return success
 
@@ -43,7 +58,7 @@ class DB_API:
             res = crsr.execute("SELECT FROM user_data WHERE discord_id = ?", (discord_id, ))
         return res.fetchone()
 
-    def get_user_timezone(self, discord_id: int) -> str:
+    def get_user_timezone(self, discord_id: int) -> str | None:
         with self.cursor() as crsr:
             crsr.execute("SELECT timezone FROM user_data WHERE discord_id = ?", (discord_id,))
             res = crsr.fetchone()

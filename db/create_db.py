@@ -1,6 +1,6 @@
 import os.path
 from db import __filename__
-import sqlite3
+from mysql import connector as db
 def create_db():
     if os.path.exists(__filename__):
         print('WARNING: A database file was already found!\nRunning the program will reset the database.')
@@ -19,14 +19,14 @@ def create_db():
 
     print('Generating database')
 
-    connection = sqlite3.connect(
+    connection = db.connect(
         database=__filename__
     )
 
     try:
         crsr = connection.cursor()
         crsr.execute(
-            "CREATE TABLE IF NOT EXISTS user_data ("
+            "CREATE TABLE IF NOT EXISTS timezones ("
             "discord_id INTEGER PRIMARY KEY NOT NULL,"
             "timezone TEXT NOT NULL"
             ");")

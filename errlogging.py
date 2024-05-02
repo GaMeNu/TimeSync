@@ -21,7 +21,7 @@ class ErrLogger:
         self.log.addHandler(handler)
 
     def new_errlog(self, err: BaseException):
-        self.log.error('An error has occurred! Check the latest ERRLOG file for more info.')
+        self.log.error(f'An error has occurred! Check the latest ERRLOG file for more info.\n{err.args[1]}')
         e: BaseException = err
         time = datetime.datetime.now()
         path = os.path.join(errlog_dir,
